@@ -11,7 +11,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <mongo-java-driver.version>2.10.3</mongo-java-driver.version>
+        <mongo-java-driver.version>2.12.3</mongo-java-driver.version>
         <junit.version>4.11</junit.version>
         <de.flapdoodle.embedmongo.version>1.18</de.flapdoodle.embedmongo.version>
         <hamcrest-all.version>1.3</hamcrest-all.version>
