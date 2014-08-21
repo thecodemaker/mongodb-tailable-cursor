@@ -9,18 +9,16 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
-public class MongoWriter implements Runnable {
+public class MongoWriter extends AbstractMongoRunner {
 
     @Autowired
     private DBCollection collection;
-
-    private AtomicBoolean running = new AtomicBoolean(true);
 
     @Override
     public void run() {
 
         Random randomGenerator = new Random();
-        while (running.get()) {
+        while (isRunning()) {
 
             Document document = new Document(String.valueOf(randomGenerator.nextLong()));
 
@@ -29,21 +27,4 @@ public class MongoWriter implements Runnable {
             threadBabySleep();
         }
     }
-
-    public void setRunning(boolean running) {
-        setRunning(new AtomicBoolean(running));
-    }
-
-    public void setRunning(AtomicBoolean running) {
-        this.running = running;
-    }
-
-    protected void threadBabySleep() {
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
 }

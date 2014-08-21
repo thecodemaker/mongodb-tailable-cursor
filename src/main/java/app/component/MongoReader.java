@@ -2,66 +2,61 @@ package app.component;
 
 import app.domain.Document;
 import com.mongodb.*;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Component
-public class MongoReader implements Runnable {
+public class MongoReader extends AbstractMongoRunner {
 
     @Autowired
     private DBCollection collection;
 
-    private AtomicBoolean running = new AtomicBoolean(true);
+    @Autowired
+    private MongoPrinter printer;
+
+    private AtomicLong lastTimestamp = new AtomicLong(0);
 
     @Override
     public void run() {
 
-        long lastTimeStamp = 0;
+        DBCursor cursor = createTailableCursor(lastTimestamp.get());
 
-        while(running.get()) {
+        while (cursor.hasNext() && isRunning()) {
 
-            DBCursor cursor = createTailableCursor(lastTimeStamp);
+            Document document = (Document) cursor.next();
 
-            while (cursor.hasNext() && running.get()) {
+            printer.print(document);
 
-                Document document = (Document) cursor.next();
+            lastTimestamp = new AtomicLong(document.getLong("ts"));
 
-                lastTimeStamp = document.getLong("ts");
-
-                threadBabySleep();
-            }
+            threadBabySleep();
         }
+
+        cursor.close();
     }
 
     private DBCursor createTailableCursor(long lastTimeStamp) {
 
         DBObject query = new BasicDBObject("ts", new BasicDBObject("$gt", lastTimeStamp));
+        DBObject sort = new BasicDBObject("$natural", 1);
 
         collection.setObjectClass(Document.class);
         return collection.find(query)
-                .sort(new BasicDBObject("$natural", 1))
-                        //    .batchSize(BATCH_SIZE)
+                .sort(sort)
                 .addOption(Bytes.QUERYOPTION_TAILABLE)
                 .addOption(Bytes.QUERYOPTION_AWAITDATA);
-
     }
 
-    public void setRunning(boolean running) {
-        setRunning(new AtomicBoolean(running));
+    public long getLastTimestamp() {
+        return lastTimestamp.get();
     }
 
-    public void setRunning(AtomicBoolean running) {
-        this.running = running;
+    public void setLastTimestamp(AtomicLong lastTimestamp) {
+        this.lastTimestamp = lastTimestamp;
     }
-
-    protected void threadBabySleep() {
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
 }

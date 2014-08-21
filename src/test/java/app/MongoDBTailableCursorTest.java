@@ -13,6 +13,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -56,7 +57,17 @@ public class MongoDBTailableCursorTest {
         Thread readThread = new Thread(reader);
         readThread.start();
 
-        waitForSomeTime();waitForSomeTime();waitForSomeTime();waitForSomeTime();waitForSomeTime();
+        waitForSomeTime();
+
+        collection.insert(new Document("C"));
+        collection.insert(new Document("D"));
+
+        waitForSomeTime();
+
+        collection.insert(new Document("E"));
+        collection.insert(new Document("F"));
+
+        waitForSomeTime();
 
         reader.setRunning(false);
 
@@ -64,6 +75,7 @@ public class MongoDBTailableCursorTest {
 
         readThread.interrupt();
 
+        assertThat(reader.getLastTimestamp(), is(not(0L)));
     }
 
     private void waitForSomeTime() throws InterruptedException {
